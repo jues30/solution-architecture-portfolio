@@ -1,5 +1,7 @@
 # 🏗️ AWS High Availability Architecture (Active–Passive, Cost-Optimized)
 
+Arquitectura productiva en AWS para sistemas logísticos críticos, diseñada bajo restricciones de costo, logrando 99.9% de disponibilidad con un modelo Active–Passive.
+
 ## 📌 1. Contexto de Negocio
 
 Esta arquitectura soporta sistemas críticos de una empresa del sector logístico (TMS y WMS), responsables de la operación diaria a nivel nacional.
@@ -34,6 +36,9 @@ Diseñar una solución en AWS que permita:
 ---
 
 ## 🏛️ 4. Descripción de la Arquitectura
+
+## 📷 Diagrama
+![AWS Active–Passive HA Architecture](AWS%20Active%E2%80%93Passive%20HA%20Architecture.svg)
 
 Arquitectura desplegada en AWS bajo un modelo **Multi-AZ Active–Passive**:
 
@@ -136,13 +141,24 @@ Arquitectura desplegada en AWS bajo un modelo **Multi-AZ Active–Passive**:
 
 ---
 
-## 📷 10. Diagrama
+## 💼 10. Impacto en el negocio
 
-![AWS Active–Passive HA Architecture](AWS%20Active%E2%80%93Passive%20HA%20Architecture.svg)
+Esta arquitectura permitió:
+- Continuidad operativa nacional
+- Reducción de costos frente a soluciones on-premise
+- Escalabilidad controlada sin sobreingeniería
 
 ---
 
-## 🧩 11. Lecciones Aprendidas
+## ⚠️ 11. Riesgos identificados
+
+- Dependencia de operación manual en failover
+- Mayor probabilidad de error humano
+- Recuperación más lenta frente a Active-Active  
+
+---
+
+## 🧩 12. Lecciones Aprendidas
 
 - El costo es un driver crítico  
 - La simplicidad reduce riesgos  
