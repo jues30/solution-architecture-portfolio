@@ -1,0 +1,48 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Resources:
+  WritersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Writers
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+      - AttributeName: writerId
+        AttributeType: S
+      KeySchema:
+      - AttributeName: writerId
+        KeyType: HASH
+  NoticiasTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Noticias
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+      - AttributeName: noticiaId
+        AttributeType: S
+      KeySchema:
+      - AttributeName: noticiaId
+        KeyType: HASH
+  FastApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: python3.9
+      Handler: app.handler
+      CodeUri: FastApiFunction
+      MemorySize: 256
+      Timeout: 10
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName: Writers
+      - DynamoDBCrudPolicy:
+          TableName: Noticias
+      - S3CrudPolicy:
+          BucketName: juan-s3-20260306
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+    Metadata:
+      SamResourceId: FastApiFunction

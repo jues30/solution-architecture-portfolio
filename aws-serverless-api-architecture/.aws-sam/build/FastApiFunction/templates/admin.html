@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Escritores</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <style>
+    .admin-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      max-width: 1100px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+    @media (max-width: 768px) {
+      .admin-layout { grid-template-columns: 1fr; }
+    }
+    .panel {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+    .panel h2 {
+      color: #38bdf8;
+      margin-top: 0;
+      font-size: 1.2rem;
+      border-bottom: 1px solid #334155;
+      padding-bottom: 0.75rem;
+    }
+    label {
+      display: block;
+      font-size: 0.85rem;
+      color: #94a3b8;
+      margin-bottom: 0.25rem;
+      margin-top: 0.9rem;
+    }
+    select {
+      width: 100%;
+      box-sizing: border-box;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      color: #e5e7eb;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.95rem;
+      cursor: pointer;
+    }
+    .stat-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.75rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      color: #94a3b8;
+    }
+    .stat-badge.pdf  { border-color: #1d4ed8; color: #93c5fd; }
+    .stat-badge.link { border-color: #15803d; color: #86efac; }
+    .genre-pill {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.1rem 0.45rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    input[type="text"],
+    input[type="url"],
+    textarea,
+    input[type="file"] {
+      width: 100%;
+      box-sizing: border-box;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      color: #e5e7eb;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.95rem;
+    }
+    textarea { min-height: 100px; resize: vertical; }
+    input[type="file"] { padding: 0.35rem; cursor: pointer; }
+    .works-entry {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 0.75rem;
+      margin-top: 0.75rem;
+      position: relative;
+    }
+    .works-entry .remove-btn {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      background: #ef4444;
+      border: none;
+      color: #fff;
+      border-radius: 4px;
+      padding: 0.15rem 0.5rem;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+    .btn {
+      display: inline-block;
+      padding: 0.6rem 1.2rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 600;
+      transition: opacity 0.15s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-primary { background: #0ea5e9; color: #fff; }
+    .btn-secondary { background: #334155; color: #e5e7eb; }
+    .btn-danger { background: #ef4444; color: #fff; }
+    .btn-success { background: #22c55e; color: #fff; }
+    .btn-sm { padding: 0.3rem 0.75rem; font-size: 0.8rem; }
+    .form-actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1.25rem;
+      flex-wrap: wrap;
+    }
+    #status-msg {
+      margin-top: 1rem;
+      padding: 0.6rem 1rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      display: none;
+    }
+    #status-msg.success { background: #14532d; color: #86efac; display: block; }
+    #status-msg.error   { background: #450a0a; color: #fca5a5; display: block; }
+    #status-msg.loading { background: #0c4a6e; color: #7dd3fc; display: block; }
+    .writer-card-admin {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+    .writer-card-admin img {
+      width: 64px;
+      height: 64px;
+      object-fit: cover;
+      border-radius: 50%;
+      background: #334155;
+      flex-shrink: 0;
+    }
+    .writer-card-admin .info { flex: 1; min-width: 0; }
+    .writer-card-admin .info h3 {
+      margin: 0 0 0.25rem;
+      color: #f1f5f9;
+      font-size: 1rem;
+    }
+    .writer-card-admin .info p {
+      margin: 0;
+      font-size: 0.8rem;
+      color: #94a3b8;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .writer-card-admin .actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-shrink: 0;
+    }
+    #writers-list-admin { max-height: 600px; overflow-y: auto; }
+    .works-count {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-top: 0.2rem;
+    }
+    .editing-banner {
+      background: #1d4ed8;
+      color: #bfdbfe;
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <style>
+    .admin-tabs {
+      display: flex;
+      gap: 0;
+      max-width: 1100px;
+      margin: 1.5rem auto 0;
+      padding: 0 1rem;
+      border-bottom: 1px solid #334155;
+    }
+    .admin-tab-btn {
+      background: none;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #64748b;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      letter-spacing: 0.04em;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .admin-tab-btn.active { color: #38bdf8; border-bottom-color: #38bdf8; }
+    .admin-tab-btn:hover:not(.active) { color: #e2e8f0; }
+    .admin-section { display: none; }
+    .admin-section.active { display: block; }
+    .noticia-card {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+    }
+    .noticia-card .noticia-imgs {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .noticia-card .noticia-imgs img {
+      width: 80px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 4px;
+      border: 1px solid #334155;
+    }
+    #noticias-status-msg {
+      margin-top: 1rem;
+      padding: 0.6rem 1rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      display: none;
+    }
+    #noticias-status-msg.success { background: #14532d; color: #86efac; display: block; }
+    #noticias-status-msg.error   { background: #450a0a; color: #fca5a5; display: block; }
+    #noticias-status-msg.loading { background: #0c4a6e; color: #7dd3fc; display: block; }
+  </style>
+
+  <header>
+    <span style="color:#38bdf8; font-weight:600;">Admin</span>
+  </header>
+
+  <div class="admin-tabs">
+    <button class="admin-tab-btn active" onclick="switchAdminTab('escritores', this)">Escritores</button>
+    <button class="admin-tab-btn" onclick="switchAdminTab('noticias', this)">Noticias</button>
+  </div>
+
+  <!-- ══ SECCIÓN ESCRITORES ══ -->
+  <div class="admin-section active" id="admin-section-escritores">
+  <div class="admin-layout">
+
+    <!-- LEFT: Form -->
+    <div class="panel">
+      <h2 id="form-title">Nuevo Escritor</h2>
+      <div class="editing-banner" id="editing-banner">
+        Editando escritor — <strong id="editing-name"></strong>
+      </div>
+
+      <form id="writer-form" onsubmit="submitWriterForm(event)">
+        <label for="writer-name">Nombre *</label>
+        <input type="text" id="writer-name" required placeholder="Nombre completo" />
+
+        <label for="writer-bio">Biografía</label>
+        <textarea id="writer-bio" placeholder="Escribe la biografía del autor..."></textarea>
+
+        <label for="writer-country">País (código ISO, ej: CO, US, MX) <span style="color:#64748b;font-weight:400;">— opcional</span></label>
+        <div style="display:flex;align-items:center;gap:0.5rem;">
+          <input type="text" id="writer-country" placeholder="CO" maxlength="2" style="width:80px;text-transform:uppercase;" oninput="updateFlagPreview()" />
+          <span id="flag-preview" style="font-size:1.6rem;line-height:1;"></span>
+        </div>
+
+        <div style="margin-top:1.1rem;padding:0.75rem;background:#0f172a;border:1px solid #334155;border-radius:8px;">
+          <p style="color:#64748b;font-size:0.8rem;margin:0 0 0.6rem;text-transform:uppercase;letter-spacing:0.06em;">Redes sociales <span style="font-weight:400;">— todas opcionales</span></p>
+          <label for="writer-instagram">Instagram (usuario o URL)</label>
+          <input type="text" id="writer-instagram" placeholder="@usuario o https://instagram.com/…" />
+          <label for="writer-facebook">Facebook (usuario o URL)</label>
+          <input type="text" id="writer-facebook" placeholder="@usuario o https://facebook.com/…" />
+          <label for="writer-tiktok">TikTok (usuario o URL)</label>
+          <input type="text" id="writer-tiktok" placeholder="@usuario o https://tiktok.com/@…" />
+          <label for="writer-website">Sitio web personal</label>
+          <input type="url" id="writer-website" placeholder="https://…" />
+        </div>
+
+        <label>Foto (JPG / PNG)</label>
+        <input type="file" id="photo-input" accept="image/jpeg,image/png" />
+
+        <div style="margin-top:1.25rem; display:flex; justify-content:space-between; align-items:center;">
+          <span style="color:#94a3b8; font-size:0.85rem;">Obras</span>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="addWorkEntry()">+ Agregar obra</button>
+        </div>
+
+        <div id="works-container"></div>
+
+        <div id="status-msg"></div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" id="submit-btn">Guardar Escritor</button>
+          <button type="button" class="btn btn-secondary" onclick="resetForm()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- RIGHT: List -->
+    <div class="panel">
+      <h2>Escritores registrados <span id="writer-count" style="font-weight:400; color:#64748b; font-size:0.9rem;"></span></h2>
+      <div id="writers-list-admin">
+        <p style="color:#64748b; font-size:0.9rem;">Cargando...</p>
+      </div>
+    </div>
+
+  </div>
+  </div> <!-- /admin-section-escritores -->
+
+  <!-- ══ SECCIÓN NOTICIAS ══ -->
+  <div class="admin-section" id="admin-section-noticias">
+    <div class="admin-layout">
+
+      <!-- LEFT: Noticia form -->
+      <div class="panel">
+        <h2 id="noticia-form-title">Nueva Noticia</h2>
+        <div class="editing-banner" id="noticia-editing-banner">
+          Editando noticia
+        </div>
+
+        <form id="noticia-form" onsubmit="submitNoticiaForm(event)">
+          <label for="noticia-texto">Texto *</label>
+          <textarea id="noticia-texto" required placeholder="Escribe el contenido de la noticia…" style="min-height:140px;"></textarea>
+
+          <label for="noticia-link">Link (opcional)</label>
+          <input type="url" id="noticia-link" placeholder="https://…" />
+
+          <label>Imagen 1 (JPG / PNG) <span style="color:#64748b;font-weight:400;">— opcional</span></label>
+          <input type="file" id="noticia-img1" accept="image/jpeg,image/png,image/webp" />
+
+          <label>Imagen 2 (JPG / PNG) <span style="color:#64748b;font-weight:400;">— opcional</span></label>
+          <input type="file" id="noticia-img2" accept="image/jpeg,image/png,image/webp" />
+
+          <div id="noticias-status-msg"></div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" id="noticia-submit-btn">Guardar Noticia</button>
+            <button type="button" class="btn btn-secondary" onclick="resetNoticiaForm()">Cancelar</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- RIGHT: Noticias list -->
+      <div class="panel">
+        <h2>Noticias publicadas <span id="noticias-count" style="font-weight:400; color:#64748b; font-size:0.9rem;"></span></h2>
+        <div id="noticias-list-admin">
+          <p style="color:#64748b; font-size:0.9rem;">Cargando...</p>
+        </div>
+      </div>
+
+    </div>
+  </div> <!-- /admin-section-noticias -->
+
+  <script>
+    let editingWriterId   = null;
+    let editingWriterData = null;
+    let workCounter = 0;
+
+    const GENRE_STYLES = {
+      "Terror":          "background:#450a0a;color:#fca5a5;",
+      "Fantasía":        "background:#2e1065;color:#c4b5fd;",
+      "Ciencia ficción": "background:#0c2a4a;color:#67e8f9;",
+      "Romance":         "background:#4a0d2e;color:#f9a8d4;",
+      "Suspenso":        "background:#431407;color:#fdba74;",
+      "Realismo":        "background:#1a2e1a;color:#86efac;",
+      "Policial":        "background:#0f1f3d;color:#7dd3fc;",
+      "Histórico":       "background:#2d1a0e;color:#fcd34d;",
+      "Autoayuda":       "background:#0d2d2a;color:#5eead4;",
+      "Poesía":          "background:#1e1040;color:#d8b4fe;",
+      "Otros":           "background:#1e293b;color:#94a3b8;",
+    };
+
+    // ── Admin tab switching ───────────────────────────────
+    function switchAdminTab(name, btn) {
+      document.querySelectorAll(".admin-tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".admin-section").forEach(s => s.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById("admin-section-" + name).classList.add("active");
+      if (name === "noticias") loadAdminNoticias();
+    }
+
+    // ── Init ──────────────────────────────────────────────
+    document.addEventListener("DOMContentLoaded", loadAdminWriters);
+
+    // ── Load writers list ─────────────────────────────────
+    async function loadAdminWriters() {
+      try {
+        const res = await fetch("/writers");
+        const data = await res.json();
+        renderAdminList(data.writers || []);
+      } catch (e) {
+        document.getElementById("writers-list-admin").innerHTML =
+          '<p style="color:#f87171">Error al cargar escritores.</p>';
+      }
+    }
+
+    function renderAdminList(writers) {
+      const container = document.getElementById("writers-list-admin");
+      const countEl = document.getElementById("writer-count");
+      countEl.textContent = `(${writers.length})`;
+
+      if (writers.length === 0) {
+        container.innerHTML = '<p style="color:#64748b;font-size:0.9rem">No hay escritores aún.</p>';
+        return;
+      }
+
+      container.innerHTML = "";
+      writers.forEach(w => {
+        const card = document.createElement("div");
+        card.className = "writer-card-admin";
+        const imgSrc = w.photoUrl || "";
+        const works  = w.works || [];
+        const worksCount = works.length;
+        const totalPdf  = works.reduce((s, wk) => s + parseInt(wk.pdf_clicks  || 0), 0);
+        const totalLink = works.reduce((s, wk) => s + parseInt(wk.link_clicks || 0), 0);
+
+        const worksStatsHtml = works.map(wk => {
+          const genreStyle = GENRE_STYLES[wk.genre] || "";
+          const genreHtml  = wk.genre ? `<span class="genre-pill" style="${genreStyle};margin-right:0.3rem;">${wk.genre}</span>` : "";
+          return `<div style="display:flex;align-items:center;gap:0.3rem;flex-wrap:wrap;margin-top:0.25rem;">
+            ${genreHtml}
+            <span style="font-size:0.78rem;color:#94a3b8;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${wk.title}</span>
+            <span class="stat-badge pdf" style="font-size:0.7rem;">📥 ${parseInt(wk.pdf_clicks||0)}</span>
+            <span class="stat-badge link" style="font-size:0.7rem;">🔗 ${parseInt(wk.link_clicks||0)}</span>
+          </div>`;
+        }).join("");
+
+        card.innerHTML = `
+          ${imgSrc
+            ? `<img src="${imgSrc}" alt="${w.name}" onerror="this.style.display='none'" />`
+            : `<div style="width:64px;height:64px;border-radius:50%;background:#334155;flex-shrink:0"></div>`}
+          <div class="info">
+            <h3>${w.name}</h3>
+            <p>${(w.biography || "Sin biografía").substring(0, 80)}${(w.biography || "").length > 80 ? "…" : ""}</p>
+            <div class="works-count" style="margin-bottom:0.3rem;">${worksCount} obra${worksCount !== 1 ? "s" : ""} · <span class="stat-badge pdf" style="font-size:0.7rem;">📥 ${totalPdf}</span> <span class="stat-badge link" style="font-size:0.7rem;">🔗 ${totalLink}</span></div>
+            ${worksStatsHtml}
+          </div>
+          <div class="actions">
+            <button class="btn btn-secondary btn-sm" onclick='startEdit(${JSON.stringify(w)})'>Editar</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteWriter('${w.writerId}', '${w.name}')">Eliminar</button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // ── Work entries ──────────────────────────────────────
+    function addWorkEntry() {
+      const id = ++workCounter;
+      const container = document.getElementById("works-container");
+      const entry = document.createElement("div");
+      entry.className = "works-entry";
+      entry.id = `work-entry-${id}`;
+      entry.innerHTML = `
+        <button type="button" class="remove-btn" onclick="removeWorkEntry(${id})">✕</button>
+        <label>Título de la obra *</label>
+        <input type="text" id="work-title-${id}" placeholder="Ej: Cien años de soledad" required />
+        <label>Estilo / Género</label>
+        <select id="work-genre-${id}">
+          <option value="">— Sin especificar —</option>
+          <option value="Terror">Terror</option>
+          <option value="Fantasía">Fantasía</option>
+          <option value="Ciencia ficción">Ciencia ficción</option>
+          <option value="Romance">Romance</option>
+          <option value="Suspenso">Suspenso</option>
+          <option value="Realismo">Realismo</option>
+          <option value="Policial">Policial</option>
+          <option value="Histórico">Histórico</option>
+          <option value="Autoayuda">Autoayuda</option>
+          <option value="Poesía">Poesía</option>
+          <option value="Otros">Otros</option>
+        </select>
+        <label>Archivo PDF</label>
+        <input type="file" id="work-pdf-${id}" accept="application/pdf" />
+        <label>Link de consulta (opcional)</label>
+        <input type="url" id="work-link-${id}" placeholder="https://…" />
+      `;
+      container.appendChild(entry);
+    }
+
+    function removeWorkEntry(id) {
+      const el = document.getElementById(`work-entry-${id}`);
+      if (el) el.remove();
+    }
+
+    function getWorkEntries() {
+      const entries = [];
+      document.querySelectorAll(".works-entry").forEach(entry => {
+        const id = entry.id.replace("work-entry-", "");
+        const titleEl = document.getElementById(`work-title-${id}`);
+        const pdfEl   = document.getElementById(`work-pdf-${id}`);
+        if (titleEl && titleEl.value.trim()) {
+          const linkEl  = document.getElementById(`work-link-${id}`);
+          const genreEl = document.getElementById(`work-genre-${id}`);
+          entries.push({
+            title: titleEl.value.trim(),
+            file:  pdfEl && pdfEl.files[0] ? pdfEl.files[0] : null,
+            link:  linkEl  ? linkEl.value.trim()  : "",
+            genre: genreEl ? genreEl.value        : "",
+          });
+        }
+      });
+      return entries;
+    }
+
+    // ── Submit form ───────────────────────────────────────
+    function getExtraFields() {
+      return {
+        country:   (document.getElementById("writer-country").value.trim().toUpperCase().slice(0, 2)),
+        instagram: document.getElementById("writer-instagram").value.trim(),
+        facebook:  document.getElementById("writer-facebook").value.trim(),
+        tiktok:    document.getElementById("writer-tiktok").value.trim(),
+        website:   document.getElementById("writer-website").value.trim(),
+      };
+    }
+
+    function updateFlagPreview() {
+      const code = document.getElementById("writer-country").value.trim().toUpperCase();
+      const preview = document.getElementById("flag-preview");
+      if (code.length === 2 && /^[A-Z]{2}$/.test(code)) {
+        preview.innerHTML = `<img src="https://flagcdn.com/w40/${code.toLowerCase()}.png" alt="${code}" style="height:20px;border-radius:3px;border:1px solid #334155;" onerror="this.style.display='none'">`;
+      } else {
+        preview.innerHTML = "";
+      }
+    }
+
+    async function submitWriterForm(e) {
+      e.preventDefault();
+      const name = document.getElementById("writer-name").value.trim();
+      const bio = document.getElementById("writer-bio").value.trim();
+      const photoFile = document.getElementById("photo-input").files[0];
+      const works = getWorkEntries();
+      const extra = getExtraFields();
+
+      setStatus("Guardando...", "loading");
+
+      try {
+        if (editingWriterId) {
+          await updateWriter(editingWriterId, name, bio, photoFile, works, extra);
+          setStatus("Escritor actualizado correctamente.", "success");
+        } else {
+          await createWriter(name, bio, photoFile, works, extra);
+          setStatus("Escritor creado correctamente.", "success");
+        }
+        resetForm();
+        await loadAdminWriters();
+      } catch (err) {
+        setStatus("Error: " + (err.message || "Algo salió mal."), "error");
+      }
+    }
+
+    async function createWriter(name, bio, photoFile, works, extra) {
+      // 1. Create writer record
+      const res = await fetch("/writers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, biography: bio, ...extra }),
+      });
+      if (!res.ok) throw new Error("No se pudo crear el escritor.");
+      const { writerId } = await res.json();
+
+      // 2. Upload photo through Lambda (no S3 CORS needed)
+      if (photoFile) {
+        const fd = new FormData();
+        fd.append("file", photoFile);
+        const pr = await fetch(`/writers/${writerId}/upload-photo`, { method: "POST", body: fd });
+        if (!pr.ok) throw new Error("No se pudo subir la foto.");
+      }
+
+      // 3. Add each work then upload its PDF through Lambda
+      for (const work of works) {
+        await addWork(writerId, work);
+      }
+    }
+
+    async function updateWriter(writerId, name, bio, photoFile, newWorks, extra) {
+      // Update name / bio / extra fields
+      const res = await fetch(`/writers/${writerId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, biography: bio, ...extra }),
+      });
+      if (!res.ok) throw new Error("No se pudo actualizar el escritor.");
+
+      // Upload new photo if provided
+      if (photoFile) {
+        const fd = new FormData();
+        fd.append("file", photoFile);
+        const pr = await fetch(`/writers/${writerId}/upload-photo`, { method: "POST", body: fd });
+        if (!pr.ok) throw new Error("No se pudo subir la foto.");
+      }
+
+      // Add new works
+      for (const work of newWorks) {
+        await addWork(writerId, work);
+      }
+    }
+
+
+
+    async function addWork(writerId, work) {
+      const res = await fetch(`/writers/${writerId}/works`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: work.title, link: work.link || "", genre: work.genre || "" }),
+      });
+      if (!res.ok) throw new Error(`No se pudo agregar la obra "${work.title}".`);
+      const { workId } = await res.json();
+
+      if (work.file) {
+        const fd = new FormData();
+        fd.append("file", work.file);
+        const pdfRes = await fetch(`/writers/${writerId}/works/${workId}/upload-pdf`, { method: "POST", body: fd });
+        if (!pdfRes.ok) throw new Error(`No se pudo subir el PDF de "${work.title}".`);
+      }
+    }
+
+    // ── Work row render helper ────────────────────────────
+    function renderWorkRow(writerId, w) {
+      const row = document.getElementById(`existing-work-${w.workId}`);
+      if (!row) return;
+      const genreStyle  = GENRE_STYLES[w.genre] || "";
+      const genreHtml   = w.genre ? `<span class="genre-pill" style="${genreStyle}">${w.genre}</span>` : "";
+      const pdfClicks   = parseInt(w.pdf_clicks  || 0);
+      const linkClicks  = parseInt(w.link_clicks || 0);
+      row.innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:0.3rem;flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;">
+            ${genreHtml}
+            <span style="font-size:0.85rem;color:#94a3b8;">📄 ${w.title}</span>
+          </div>
+          <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+            <span class="stat-badge pdf">📥 PDF: ${pdfClicks}</span>
+            <span class="stat-badge link">🔗 Link: ${linkClicks}</span>
+          </div>
+          ${w.link ? `<a href="${w.link}" target="_blank" style="font-size:0.75rem;color:#60a5fa;word-break:break-all;">${w.link}</a>` : ""}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:0.3rem;flex-shrink:0;">
+          <button class="btn btn-secondary btn-sm" onclick="openEditWork('${w.workId}')">Editar</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteWork('${writerId}', '${w.workId}', '${w.title.replace(/'/g, "\\'")}')">Eliminar</button>
+        </div>
+      `;
+    }
+
+    // ── Edit ──────────────────────────────────────────────
+    function startEdit(writer) {
+      editingWriterId   = writer.writerId;
+      editingWriterData = writer;
+      document.getElementById("writer-name").value = writer.name || "";
+      document.getElementById("writer-bio").value = writer.biography || "";
+      document.getElementById("writer-country").value = writer.country || "";
+      document.getElementById("writer-instagram").value = writer.instagram || "";
+      document.getElementById("writer-facebook").value = writer.facebook || "";
+      document.getElementById("writer-tiktok").value = writer.tiktok || "";
+      document.getElementById("writer-website").value = writer.website || "";
+      updateFlagPreview();
+      document.getElementById("photo-input").value = "";
+      document.getElementById("works-container").innerHTML = "";
+      workCounter = 0;
+
+      document.getElementById("form-title").textContent = "Editar Escritor";
+      document.getElementById("submit-btn").textContent = "Actualizar Escritor";
+      const banner = document.getElementById("editing-banner");
+      banner.style.display = "block";
+      document.getElementById("editing-name").textContent = writer.name;
+
+      // Show existing works with delete button
+      const container = document.getElementById("works-container");
+      if (writer.works && writer.works.length > 0) {
+        const existingDiv = document.createElement("div");
+        existingDiv.style.cssText = "background:#0f172a;border:1px solid #334155;border-radius:8px;padding:0.75rem;margin-top:0.75rem;";
+        existingDiv.innerHTML = `<p style="color:#64748b;font-size:0.8rem;margin:0 0 0.6rem">Obras actuales:</p>`;
+        container.appendChild(existingDiv);
+        writer.works.forEach(w => {
+          const row = document.createElement("div");
+          row.id = `existing-work-${w.workId}`;
+          row.style.cssText = "display:flex;align-items:flex-start;justify-content:space-between;gap:0.5rem;padding:0.5rem 0;border-bottom:1px solid #1e293b;";
+          existingDiv.appendChild(row);
+          renderWorkRow(writer.writerId, w);
+        });
+      }
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    // ── Edit work inline ──────────────────────────────────
+    function openEditWork(workId) {
+      const w = editingWriterData.works.find(x => x.workId === workId);
+      if (!w) return;
+      const row = document.getElementById(`existing-work-${workId}`);
+      const genreOptions = ["", "Terror", "Fantasía", "Ciencia ficción", "Romance", "Suspenso", "Realismo", "Policial", "Histórico", "Autoayuda", "Poesía", "Otros"]
+        .map(g => `<option value="${g}" ${g === (w.genre || "") ? "selected" : ""}>${g || "— Sin especificar —"}</option>`)
+        .join("");
+      row.innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:0.45rem;flex:1;">
+          <label style="margin-top:0;">Título *</label>
+          <input type="text" id="edit-title-${workId}" value="${w.title.replace(/"/g, '&quot;')}" />
+          <label style="margin-top:0;">Género</label>
+          <select id="edit-genre-${workId}">${genreOptions}</select>
+          <label style="margin-top:0;">Link de consulta</label>
+          <input type="url" id="edit-link-${workId}" value="${(w.link || "").replace(/"/g, '&quot;')}" placeholder="https://…" />
+          <label style="margin-top:0;">Reemplazar PDF (opcional)</label>
+          <input type="file" id="edit-pdf-${workId}" accept="application/pdf" />
+          <div style="display:flex;gap:0.5rem;margin-top:0.25rem;">
+            <button class="btn btn-success btn-sm" onclick="saveWork('${workId}')">Guardar</button>
+            <button class="btn btn-secondary btn-sm" onclick="cancelEditWork('${workId}')">Cancelar</button>
+          </div>
+        </div>
+      `;
+    }
+
+    async function saveWork(workId) {
+      const title = document.getElementById(`edit-title-${workId}`).value.trim();
+      const genre = document.getElementById(`edit-genre-${workId}`).value;
+      const link  = document.getElementById(`edit-link-${workId}`).value.trim();
+      const pdfFile = document.getElementById(`edit-pdf-${workId}`).files[0];
+      if (!title) { alert("El título es obligatorio."); return; }
+      try {
+        const res = await fetch(`/writers/${editingWriterId}/works/${workId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title, genre, link }),
+        });
+        if (!res.ok) throw new Error();
+        if (pdfFile) {
+          const fd = new FormData();
+          fd.append("file", pdfFile);
+          const pr = await fetch(`/writers/${editingWriterId}/works/${workId}/upload-pdf`, { method: "POST", body: fd });
+          if (!pr.ok) throw new Error("No se pudo subir el PDF.");
+        }
+        // Update local data and re-render row
+        const w = editingWriterData.works.find(x => x.workId === workId);
+        if (w) { w.title = title; w.genre = genre; w.link = link; }
+        renderWorkRow(editingWriterId, w);
+      } catch (err) {
+        alert("Error al guardar la obra: " + (err.message || ""));
+      }
+    }
+
+    function cancelEditWork(workId) {
+      const w = editingWriterData.works.find(x => x.workId === workId);
+      if (w) renderWorkRow(editingWriterId, w);
+    }
+
+    // ── Delete ────────────────────────────────────────────
+    async function deleteWriter(writerId, name) {
+      if (!confirm(`¿Eliminar a "${name}"? Esta acción no se puede deshacer.`)) return;
+      try {
+        const res = await fetch(`/writers/${writerId}`, { method: "DELETE" });
+        if (!res.ok) throw new Error();
+        await loadAdminWriters();
+      } catch {
+        alert("Error al eliminar el escritor.");
+      }
+    }
+
+    // ── Reset ─────────────────────────────────────────────
+    function resetForm() {
+      editingWriterId = null;
+      document.getElementById("writer-form").reset();
+      document.getElementById("works-container").innerHTML = "";
+      workCounter = 0;
+      document.getElementById("form-title").textContent = "Nuevo Escritor";
+      document.getElementById("submit-btn").textContent = "Guardar Escritor";
+      document.getElementById("editing-banner").style.display = "none";
+      document.getElementById("status-msg").className = "";
+      document.getElementById("status-msg").style.display = "none";
+      document.getElementById("flag-preview").innerHTML = "";
+    }
+
+    // ── Delete work ───────────────────────────────────────
+    async function deleteWork(writerId, workId, title) {
+      if (!confirm(`¿Eliminar la obra "${title}"?`)) return;
+      try {
+        const res = await fetch(`/writers/${writerId}/works/${workId}`, { method: "DELETE" });
+        if (!res.ok) throw new Error();
+        const row = document.getElementById(`existing-work-${workId}`);
+        if (row) row.remove();
+      } catch {
+        alert("Error al eliminar la obra.");
+      }
+    }
+
+    // ── Helpers ───────────────────────────────────────────
+    function setStatus(msg, type) {
+      const el = document.getElementById("status-msg");
+      el.textContent = msg;
+      el.className = type;
+    }
+
+    // ══════════════════════════════════════════════════════
+    // NOTICIAS
+    // ══════════════════════════════════════════════════════
+    let editingNoticiaId = null;
+
+    function setNoticiaStatus(msg, type) {
+      const el = document.getElementById("noticias-status-msg");
+      el.textContent = msg;
+      el.className = type;
+    }
+
+    async function loadAdminNoticias() {
+      try {
+        const res = await fetch("/noticias");
+        const data = await res.json();
+        renderAdminNoticias(data.noticias || []);
+      } catch {
+        document.getElementById("noticias-list-admin").innerHTML =
+          '<p style="color:#f87171">Error al cargar noticias.</p>';
+      }
+    }
+
+    function renderAdminNoticias(noticias) {
+      const container = document.getElementById("noticias-list-admin");
+      const countEl = document.getElementById("noticias-count");
+      countEl.textContent = `(${noticias.length})`;
+      if (noticias.length === 0) {
+        container.innerHTML = '<p style="color:#64748b;font-size:0.9rem">No hay noticias aún.</p>';
+        return;
+      }
+      container.innerHTML = "";
+      noticias.forEach(n => {
+        const card = document.createElement("div");
+        card.className = "noticia-card";
+        const imgsHtml = [n.imagen1Url, n.imagen2Url].filter(Boolean).map(u =>
+          `<img src="${u}" alt="imagen" onerror="this.style.display='none'">`
+        ).join("");
+        const linkHtml = n.link ? `<a href="${n.link}" target="_blank" style="font-size:0.8rem;color:#60a5fa;word-break:break-all;">${n.link}</a>` : "";
+        card.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.75rem;">
+            <div style="flex:1;min-width:0;">
+              <p style="color:#e2e8f0;font-size:0.9rem;margin:0 0 0.4rem;white-space:pre-wrap;word-break:break-word;">${n.texto}</p>
+              ${linkHtml}
+              ${imgsHtml ? `<div class="noticia-imgs">${imgsHtml}</div>` : ""}
+              <span style="color:#475569;font-size:0.75rem;">${(n.createdAt || "").replace("T", " ").substring(0,16)}</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:0.3rem;flex-shrink:0;">
+              <button class="btn btn-secondary btn-sm" onclick='startEditNoticia(${JSON.stringify(n)})'>Editar</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteNoticia('${n.noticiaId}')">Eliminar</button>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    async function submitNoticiaForm(e) {
+      e.preventDefault();
+      const texto = document.getElementById("noticia-texto").value.trim();
+      const link = document.getElementById("noticia-link").value.trim();
+      const img1 = document.getElementById("noticia-img1").files[0];
+      const img2 = document.getElementById("noticia-img2").files[0];
+      setNoticiaStatus("Guardando...", "loading");
+      try {
+        let noticiaId;
+        if (editingNoticiaId) {
+          const res = await fetch(`/noticias/${editingNoticiaId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ texto, link }),
+          });
+          if (!res.ok) throw new Error("No se pudo actualizar la noticia.");
+          noticiaId = editingNoticiaId;
+        } else {
+          const res = await fetch("/noticias", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ texto, link }),
+          });
+          if (!res.ok) throw new Error("No se pudo crear la noticia.");
+          noticiaId = (await res.json()).noticiaId;
+        }
+        if (img1) {
+          const fd = new FormData(); fd.append("file", img1);
+          const r = await fetch(`/noticias/${noticiaId}/upload-image/1`, { method: "POST", body: fd });
+          if (!r.ok) throw new Error("No se pudo subir la imagen 1.");
+        }
+        if (img2) {
+          const fd = new FormData(); fd.append("file", img2);
+          const r = await fetch(`/noticias/${noticiaId}/upload-image/2`, { method: "POST", body: fd });
+          if (!r.ok) throw new Error("No se pudo subir la imagen 2.");
+        }
+        setNoticiaStatus(editingNoticiaId ? "Noticia actualizada." : "Noticia creada.", "success");
+        resetNoticiaForm();
+        await loadAdminNoticias();
+      } catch (err) {
+        setNoticiaStatus("Error: " + (err.message || "Algo salió mal."), "error");
+      }
+    }
+
+    function startEditNoticia(n) {
+      editingNoticiaId = n.noticiaId;
+      document.getElementById("noticia-texto").value = n.texto || "";
+      document.getElementById("noticia-link").value = n.link || "";
+      document.getElementById("noticia-img1").value = "";
+      document.getElementById("noticia-img2").value = "";
+      document.getElementById("noticia-form-title").textContent = "Editar Noticia";
+      document.getElementById("noticia-submit-btn").textContent = "Actualizar Noticia";
+      document.getElementById("noticia-editing-banner").style.display = "block";
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    async function deleteNoticia(noticiaId) {
+      if (!confirm("¿Eliminar esta noticia? Esta acción no se puede deshacer.")) return;
+      try {
+        const res = await fetch(`/noticias/${noticiaId}`, { method: "DELETE" });
+        if (!res.ok) throw new Error();
+        await loadAdminNoticias();
+      } catch {
+        alert("Error al eliminar la noticia.");
+      }
+    }
+
+    function resetNoticiaForm() {
+      editingNoticiaId = null;
+      document.getElementById("noticia-form").reset();
+      document.getElementById("noticia-form-title").textContent = "Nueva Noticia";
+      document.getElementById("noticia-submit-btn").textContent = "Guardar Noticia";
+      document.getElementById("noticia-editing-banner").style.display = "none";
+      document.getElementById("noticias-status-msg").className = "";
+      document.getElementById("noticias-status-msg").style.display = "none";
+    }
+  </script>
+</body>
+</html>
