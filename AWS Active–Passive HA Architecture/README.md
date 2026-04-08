@@ -138,7 +138,7 @@ Arquitectura desplegada en AWS bajo un modelo **Multi-AZ Active–Passive**:
 
 ## 📷 10. Diagrama
 
-![Arquitectura](AWS Active–Passive HA Architecture.svg)
+![AWS Active–Passive HA Architecture](AWS%20Active%E2%80%93Passive%20HA%20Architecture.svg)
 
 ---
 
