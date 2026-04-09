@@ -125,16 +125,6 @@ En el monolito, los archivos vivían en el disco del servidor. Si el servidor fa
 
 ---
 
-## Estructura del repositorio
-
-```
-.
-├── README.md                          # Este documento
-└── monolito_to_aws_architecture.svg   # Diagrama AS-IS → TO-BE (editable)
-```
-
----
-
 ## Autor
 
 **Juan Esteban Peláez**
@@ -142,4 +132,4 @@ Arquitecto de Soluciones TI
 
 ---
 
-*Arquitectura de soluciones TI — decisiones documentadas con justificación técnica y de negocio.*
+*Arquitectura de soluciones TI — Decisiones documentadas con justificación técnica y de negocio.*
