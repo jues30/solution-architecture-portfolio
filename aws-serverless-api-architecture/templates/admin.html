@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin — Escritores</title>
+  <title>Admin — La trama infinita</title>
+  <link rel="icon" href="/static/icono.png" type="image/png" />
   <link rel="stylesheet" href="/static/style.css" />
   <style>
     .admin-layout {
@@ -248,8 +249,24 @@
     #noticias-status-msg.loading { background: #0c4a6e; color: #7dd3fc; display: block; }
   </style>
 
-  <header>
-    <span style="color:#38bdf8; font-weight:600;">Admin</span>
+  <header style="gap:1rem;">
+    <img
+      src="/static/icono.png"
+      alt="La trama infinita"
+      style="height:40px; width:auto; border-radius:8px;
+             filter: drop-shadow(0 0 8px rgba(56,189,248,0.4));
+             flex-shrink:0;"
+    />
+    <span style="color:#38bdf8; font-weight:600; letter-spacing:0.04em;">Admin — LA TRAMA INFINITA</span>
+    <a href="/" target="_blank" rel="noopener"
+       style="margin-left:auto; display:inline-flex; align-items:center; gap:0.4rem;
+              font-size:0.85rem; color:#94a3b8; text-decoration:none;
+              border:1px solid #334155; border-radius:6px; padding:0.35rem 0.8rem;
+              transition:color 0.15s, border-color 0.15s;"
+       onmouseover="this.style.color='#38bdf8';this.style.borderColor='#38bdf8';"
+       onmouseout="this.style.color='#94a3b8';this.style.borderColor='#334155';">
+      ↗ Ver página
+    </a>
   </header>
 
   <div class="admin-tabs">
@@ -614,6 +631,37 @@
 
 
 
+    async function uploadPdfChunked(writerId, workId, file, title) {
+      // 1. Obtener URL firmada (el backend también configura CORS en S3)
+      const urlRes = await fetch(`/writers/${writerId}/works/${workId}/upload-url`);
+      if (!urlRes.ok) {
+        const t = await urlRes.text().catch(() => "");
+        throw new Error(`No se pudo obtener URL de subida (HTTP ${urlRes.status}): ${t}`);
+      }
+      const { url, pdfKey } = await urlRes.json();
+
+      // 2. PUT directo a S3 — sin pasar por Lambda, sin límite de tamaño
+      const s3Res = await fetch(url, {
+        method: "PUT",
+        body: file,
+        headers: { "Content-Type": "application/pdf" },
+      });
+      if (!s3Res.ok) {
+        throw new Error(`Error al subir PDF a S3 (HTTP ${s3Res.status}). Si el error persiste, configura CORS en el bucket S3.`);
+      }
+
+      // 3. Confirmar en DynamoDB
+      const confirmRes = await fetch(`/writers/${writerId}/works/${workId}/confirm-pdf`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pdfKey }),
+      });
+      if (!confirmRes.ok) {
+        const t = await confirmRes.text().catch(() => "");
+        throw new Error(`Error al confirmar subida (HTTP ${confirmRes.status}): ${t}`);
+      }
+    }
+
     async function addWork(writerId, work) {
       const res = await fetch(`/writers/${writerId}/works`, {
         method: "POST",
@@ -624,10 +672,7 @@
       const { workId } = await res.json();
 
       if (work.file) {
-        const fd = new FormData();
-        fd.append("file", work.file);
-        const pdfRes = await fetch(`/writers/${writerId}/works/${workId}/upload-pdf`, { method: "POST", body: fd });
-        if (!pdfRes.ok) throw new Error(`No se pudo subir el PDF de "${work.title}".`);
+        await uploadPdfChunked(writerId, workId, work.file, work.title);
       }
     }
 
@@ -739,10 +784,7 @@
         });
         if (!res.ok) throw new Error();
         if (pdfFile) {
-          const fd = new FormData();
-          fd.append("file", pdfFile);
-          const pr = await fetch(`/writers/${editingWriterId}/works/${workId}/upload-pdf`, { method: "POST", body: fd });
-          if (!pr.ok) throw new Error("No se pudo subir el PDF.");
+          await uploadPdfChunked(editingWriterId, workId, pdfFile, title);
         }
         // Update local data and re-render row
         const w = editingWriterData.works.find(x => x.workId === workId);

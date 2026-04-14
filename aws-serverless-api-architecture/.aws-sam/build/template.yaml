@@ -30,7 +30,7 @@ Resources:
       Handler: app.handler
       CodeUri: FastApiFunction
       MemorySize: 256
-      Timeout: 10
+      Timeout: 30
       Policies:
       - DynamoDBCrudPolicy:
           TableName: Writers
@@ -38,6 +38,23 @@ Resources:
           TableName: Noticias
       - S3CrudPolicy:
           BucketName: juan-s3-20260306
+      - Statement:
+        - Effect: Allow
+          Action:
+          - s3:CreateMultipartUpload
+          - s3:UploadPart
+          - s3:CompleteMultipartUpload
+          - s3:AbortMultipartUpload
+          Resource: arn:aws:s3:::juan-s3-20260306/*
+        - Effect: Allow
+          Action:
+          - s3:PutBucketCors
+          Resource: arn:aws:s3:::juan-s3-20260306
+        - Effect: Allow
+          Action:
+          - secretsmanager:GetSecretValue
+          Resource:
+            Fn::Sub: arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:pagina-serverless/admin-credentials*
       Events:
         Api:
           Type: HttpApi

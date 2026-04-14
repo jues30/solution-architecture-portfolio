@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Escritores</title>
+  <title>La trama infinita</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -228,7 +228,9 @@
       line-height: 1.8;
       white-space: pre-wrap;
       font-family: 'Georgia', serif;
-      margin-bottom: 1.1rem;
+      text-align: justify;
+      margin-top: 1.1rem;
+      margin-bottom: 0;
     }
     .card-expanded h3 {
       font-family: system-ui, sans-serif;
@@ -236,6 +238,7 @@
       text-transform: uppercase;
       letter-spacing: 0.1em;
       color: var(--accent2);
+      margin-top: 1rem;
       margin-bottom: 0.6rem;
     }
     .works-list {
@@ -463,8 +466,8 @@
   </header>
 
   <div class="page-title">
-    <h1>Escritores</h1>
-    <p>Biografías y obras de nuestros autores</p>
+    <h1>LA TRAMA INFINITA</h1>
+    <p>Donde los autores independientes encuentran su voz.</p>
   </div>
 
   <div class="tabs">
@@ -504,7 +507,10 @@
   </div>
 
   <footer>
-    <p>Todas las obras acá publicadas tienen el permiso de sus autores para su difusión.</p>
+    <p>En La trama infinita, respetamos profundamente los derechos de autor y la propiedad intelectual.
+    <br>Todas las obras publicadas en esta plataforma han sido compartidas con el consentimiento explícito de sus respectivos autores, quienes conservan en todo momento la titularidad de sus derechos.
+    <br>La publicación de contenidos en este sitio se realiza bajo autorización directa de sus creadores, ya sea para su difusión, lectura o comercialización según los términos definidos por cada autor.
+    <br>Queda prohibida la reproducción, distribución o uso no autorizado de las obras sin el consentimiento expreso de sus autores.</p>
   </footer>
 
   <script>
@@ -542,7 +548,7 @@
       try {
         const res  = await fetch("/writers");
         const data = await res.json();
-        allWriters = data.writers || [];
+        allWriters = (data.writers || []).sort((a, b) => a.name.localeCompare(b.name, "es"));
 
         allWorks = [];
         allWriters.forEach(w => {
@@ -617,9 +623,9 @@
             <button class="toggle-btn" id="btn-${w.writerId}" onclick="toggleCard('${w.writerId}')">Ver más</button>
           </div>
           <div class="card-expanded" id="exp-${w.writerId}">
-            ${bio ? `<p class="full-bio">${bio}</p>` : ""}
-            ${worksHtml ? `<h3>Obras</h3><ul class="works-list">${worksHtml}</ul>` : ""}
             ${socialHtml}
+            ${worksHtml ? `<h3>Obras</h3><ul class="works-list">${worksHtml}</ul>` : ""}
+            ${bio ? `<p class="full-bio">${bio}</p>` : ""}
           </div>
         ` : ""}
       `;

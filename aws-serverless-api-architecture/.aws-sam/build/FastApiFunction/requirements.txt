@@ -4,3 +4,4 @@ boto3
 jinja2
 uvicorn
 python-multipart
+Pillow

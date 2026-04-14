@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, HTTPException, File, UploadFile, Depends
+from fastapi import FastAPI, Request, HTTPException, File, Form, UploadFile, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -9,6 +9,9 @@ import boto3
 import uuid
 import secrets
 import datetime
+import json
+import io
+from PIL import Image
 
 app = FastAPI()
 security = HTTPBasic()
@@ -30,11 +33,22 @@ writers_bio_table = dynamodb.Table("Writers")
 noticias_table = dynamodb.Table("Noticias")
 
 
+# ---------- SECRETS ----------
+
+def _get_admin_credentials():
+    client = boto3.client("secretsmanager")
+    response = client.get_secret_value(SecretId="pagina-serverless/admin-credentials")
+    creds = json.loads(response["SecretString"])
+    return creds["username"], creds["password"]
+
+_ADMIN_USER, _ADMIN_PASS = _get_admin_credentials()
+
+
 # ---------- AUTH ----------
 
 def check_admin(credentials: HTTPBasicCredentials = Depends(security)):
-    ok_user = secrets.compare_digest(credentials.username, "234rtr")
-    ok_pass = secrets.compare_digest(credentials.password, "234pjwerfert34")
+    ok_user = secrets.compare_digest(credentials.username, _ADMIN_USER)
+    ok_pass = secrets.compare_digest(credentials.password, _ADMIN_PASS)
     if not (ok_user and ok_pass):
         raise HTTPException(
             status_code=401,
@@ -44,6 +58,25 @@ def check_admin(credentials: HTTPBasicCredentials = Depends(security)):
 
 
 # ---------- S3 HELPER ----------
+
+def ensure_s3_cors():
+    """Configura CORS en el bucket para que el navegador pueda hacer PUT directo a S3."""
+    try:
+        s3.put_bucket_cors(
+            Bucket=BUCKET,
+            CORSConfiguration={
+                "CORSRules": [{
+                    "AllowedHeaders": ["*"],
+                    "AllowedMethods": ["PUT"],
+                    "AllowedOrigins": ["*"],
+                    "ExposeHeaders": ["ETag"],
+                    "MaxAgeSeconds": 3000,
+                }]
+            },
+        )
+    except Exception:
+        pass
+
 
 def presigned_get(key: str, expires: int = 3600):
     if not key:
@@ -152,15 +185,17 @@ def delete_writer(writer_id: str):
 
 @app.post("/writers/{writer_id}/upload-photo")
 async def upload_photo(writer_id: str, file: UploadFile = File(...)):
-    ext_map = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"}
-    ext = ext_map.get(file.content_type, "jpg")
-    photo_key = f"writers/{writer_id}/photo.{ext}"
     content = await file.read()
+    img = Image.open(io.BytesIO(content)).convert("RGB")
+    img.thumbnail((800, 800), Image.LANCZOS)
+    buf = io.BytesIO()
+    img.save(buf, format="WEBP", quality=85, method=6)
+    photo_key = f"writers/{writer_id}/photo.webp"
     s3.put_object(
         Bucket=BUCKET,
         Key=photo_key,
-        Body=content,
-        ContentType=file.content_type or "image/jpeg",
+        Body=buf.getvalue(),
+        ContentType="image/webp",
     )
     writers_bio_table.update_item(
         Key={"writerId": writer_id},
@@ -254,16 +289,27 @@ def delete_work(writer_id: str, work_id: str):
     return {"status": "deleted"}
 
 
-@app.post("/writers/{writer_id}/works/{work_id}/upload-pdf")
-async def upload_pdf(writer_id: str, work_id: str, file: UploadFile = File(...)):
+@app.get("/writers/{writer_id}/works/{work_id}/upload-url")
+def get_upload_url(writer_id: str, work_id: str):
+    """URL firmada para que el navegador suba el PDF directo a S3 (sin pasar por Lambda)."""
+    ensure_s3_cors()
     pdf_key = f"writers/{writer_id}/works/{work_id}.pdf"
-    content = await file.read()
-    s3.put_object(
-        Bucket=BUCKET,
-        Key=pdf_key,
-        Body=content,
-        ContentType="application/pdf",
-    )
+    try:
+        url = s3.generate_presigned_url(
+            "put_object",
+            Params={"Bucket": BUCKET, "Key": pdf_key, "ContentType": "application/pdf"},
+            ExpiresIn=300,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al generar URL: {e}")
+    return {"url": url, "pdfKey": pdf_key}
+
+
+@app.post("/writers/{writer_id}/works/{work_id}/confirm-pdf")
+async def confirm_pdf(writer_id: str, work_id: str, request: Request):
+    """Actualiza DynamoDB después de que el navegador subió el PDF directo a S3."""
+    body = await request.json()
+    pdf_key = body.get("pdfKey", f"writers/{writer_id}/works/{work_id}.pdf")
     resp = writers_bio_table.get_item(Key={"writerId": writer_id})
     writer = resp.get("Item")
     if not writer:
